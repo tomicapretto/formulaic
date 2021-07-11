@@ -118,6 +118,14 @@ class DefaultOperatorResolver(OperatorResolver):
         return [
             Operator("~", arity=2, precedence=-100, associativity=None, to_terms=formula_separator_expansion),
             Operator("~", arity=1, precedence=-100, associativity=None, fixity='prefix', to_terms=lambda expr: (expr.to_terms(), )),
+            Operator("|", arity=2, precedence=50, associativity='left', to_terms=lambda *args: {
+                functools.reduce(lambda x, y: x * y, term).with_tag('group')
+                for term in itertools.product(*[arg.to_terms() for arg in args])
+            }, group_kinds={'('}, group_depths={1}),
+            Operator("||", arity=2, precedence=70, associativity='left', to_terms=lambda *args: {
+                functools.reduce(lambda x, y: x * y, term).with_tag('group_independent')
+                for term in itertools.product(*[arg.to_terms() for arg in args])
+            }, group_kinds={'('}, group_depths={1}),
             Operator("+", arity=2, precedence=100, associativity='left', to_terms=lambda *args: set(itertools.chain(*[arg.to_terms() for arg in args]))),
             Operator("-", arity=2, precedence=100, associativity='left', to_terms=lambda left, right: set(set(left.to_terms()).difference(right.to_terms()))),
             Operator("+", arity=1, precedence=100, associativity='right', fixity='prefix', to_terms=lambda arg: arg.to_terms()),
@@ -137,9 +145,9 @@ class DefaultOperatorResolver(OperatorResolver):
             Operator("**", arity=2, precedence=500, associativity='right', to_terms=power),
         ]
 
-    def resolve(self, token: Token, max_prefix_arity) -> List[Operator]:
+    def resolve(self, token: Token, max_prefix_arity, group_kind, group_depth) -> List[Operator]:
         if token.token in self.operator_table:
-            return super().resolve(token, max_prefix_arity)
+            return super().resolve(token, max_prefix_arity, group_kind, group_depth)
 
         symbol = token.token
 
@@ -148,9 +156,9 @@ class DefaultOperatorResolver(OperatorResolver):
         symbol = re.sub(r'[+]{2,}', '+', symbol)  # multiple sequential '+' -> '+'
 
         if symbol in self.operator_table:
-            return [self._resolve(token, symbol, max_prefix_arity)]
+            return [self._resolve(token, symbol, max_prefix_arity, group_kind, group_depth)]
 
         return [
-            self._resolve(token, sym, max_prefix_arity if i == 0 else 0)
+            self._resolve(token, sym, max_prefix_arity if i == 0 else 0, group_kind, group_depth)
             for i, sym in enumerate(symbol)
         ]

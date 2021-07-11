@@ -13,12 +13,14 @@ class Operator:
         INFIX = 'infix'
         POSTFIX = 'postfix'
 
-    def __init__(self, symbol, *, arity=None, precedence=None, associativity=None, fixity='infix', to_terms=None):
+    def __init__(self, symbol, *, arity=None, precedence=None, associativity=None, fixity='infix', group_kinds=None, group_depths=None, to_terms=None):
         self.symbol = symbol
         self.arity = arity
         self.precedence = precedence
         self.associativity = associativity
         self.fixity = fixity
+        self.group_kinds = group_kinds
+        self.group_depths = group_depths
         self._to_terms = to_terms
 
     @property

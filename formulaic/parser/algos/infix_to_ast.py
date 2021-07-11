@@ -11,6 +11,7 @@ def infix_to_ast(tokens, operator_resolver):
 
     output_queue = []
     operator_stack = []
+    group_operators = []
 
     def stack_operator(operator, token):
         operator_stack.append(OrderedOperator(operator, token, len(output_queue)))
@@ -44,16 +45,18 @@ def infix_to_ast(tokens, operator_resolver):
         else:
             if token.token == '(':
                 stack_operator(token, token)
+                group_operators.append('(')
             elif token.token == ')':
                 while operator_stack and operator_stack[-1].token != '(':
                     output_queue = operate(operator_stack.pop(), output_queue)
                 if operator_stack and operator_stack[-1].token == '(':
                     operator_stack.pop()
+                    group_operators.pop()
                 else:
                     raise exc_for_token(token, "Could not find matching parenthesis.")
             else:
                 max_prefix_arity = len(output_queue) - operator_stack[-1].index if operator_stack else len(output_queue)
-                operators = operator_resolver.resolve(token, max_prefix_arity)
+                operators = operator_resolver.resolve(token, max_prefix_arity, group_kind=group_operators[-1] if group_operators else None, group_depth=len(group_operators))
 
                 for operator in operators:
 

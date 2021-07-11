@@ -1,7 +1,8 @@
 class Term:
 
-    def __init__(self, factors):
+    def __init__(self, factors, tags=None):
         self.factors = set(factors)
+        self.tags = tags or []
 
     def __mul__(self, other):
         if isinstance(other, Term):
@@ -33,3 +34,7 @@ class Term:
 
     def __repr__(self):
         return ':'.join(self._tuple)
+
+    def with_tag(self, tag):
+        self.tags.append(tag)
+        return self
